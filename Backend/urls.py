@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework.authtoken.views import obtain_auth_token
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -11,6 +10,12 @@ from bibliotecaapp.views import (
     UsuarioViewSet,
     PedidoViewSet,
     comprar
+)
+
+# JWT IMPORT (FUERA de urlpatterns)
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
 )
 
 # ======================
@@ -23,7 +28,7 @@ router.register(r'usuarios', UsuarioViewSet)
 router.register(r'pedidos', PedidoViewSet)
 
 # ======================
-# URLS
+# URLS PRINCIPALES
 # ======================
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -31,8 +36,9 @@ urlpatterns = [
     # API REST
     path('api/', include(router.urls)),
 
-    # LOGIN TOKEN
-    path('api/login/', obtain_auth_token),
+    # LOGIN JWT
+    path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # COMPRA
     path('api/comprar/', comprar),
