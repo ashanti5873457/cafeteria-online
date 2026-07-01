@@ -68,7 +68,7 @@ function ClientePanel() {
   const productosFiltrados = productos.filter((p) =>
     p.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
-  
+
   return (
     <div className="container-fluid p-4 fondo-panel">
 
@@ -102,6 +102,7 @@ function ClientePanel() {
             🛒 {carrito.length}
           </div>
 
+          {/* 🔥 BOTÓN NUEVO */}
           <button
             className="btn btn-info"
             onClick={() => setVista("datos")}
@@ -129,7 +130,7 @@ function ClientePanel() {
         </div>
       </div>
 
-      {/* PERFIL */}
+      {/* 👤 VISTA MIS DATOS */}
       {vista === "datos" && (
         <div className="card shadow mt-4 p-3">
 
@@ -166,40 +167,44 @@ function ClientePanel() {
                 const agotado = Number(prod.stock) <= 0;
 
                 return (
-                  <div key={prod.id_producto} className="col-md-4 mb-3">
+                  <div key={prod.id_producto} className="col-lg-4 col-md-6 mb-4 d-flex">
 
-                    <div className="card shadow">
+  <div className="card shadow producto-card-cliente w-100">
 
-                      <div className="card-body">
+    <div className="card-body d-flex flex-column">
 
-                        <h5>{prod.nombre}</h5>
+      <h5 className="titulo-card">
+        {prod.nombre}
+      </h5>
 
-                        <p>{prod.descripcion}</p>
+      <p className="descripcion-card">
+        {prod.descripcion}
+      </p>
 
-                        <h4 className="text-success">
-                          ${Number(prod.precio).toFixed(2)}
-                        </h4>
+      <h4 className="text-success precio-card">
+        ${Number(prod.precio).toFixed(2)}
+      </h4>
 
-                        <p>
-                          Stock:{" "}
-                          <span className={agotado ? "text-danger" : "text-success"}>
-                            {agotado ? "AGOTADO" : prod.stock}
-                          </span>
-                        </p>
+      <p className="stock-card">
+        Stock:
+        <span className={agotado ? "text-danger" : "text-success"}>
+          {agotado ? " AGOTADO" : ` ${prod.stock}`}
+        </span>
+      </p>
 
-                        <button
-                          className="btn btn-warning w-100"
-                          disabled={agotado}
-                          onClick={() => agregarAlCarrito(prod)}
-                        >
-                          🛒 Agregar
-                        </button>
+      <button
+        className="btn btn-warning w-100 mt-auto"
+        disabled={agotado}
+        onClick={() => agregarAlCarrito(prod)}
+      >
+        🛒 Agregar
+      </button>
 
-                      </div>
+    </div>
 
-                    </div>
+  </div>
 
-                  </div>
+</div>
                 );
               })}
 

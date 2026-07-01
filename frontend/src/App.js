@@ -1,29 +1,35 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import Login from "./paginas/Login";
-import AdminPanel from "./paginas/AdminPanel";
-import ClientePanel from "./paginas/ClientePanel";
-import Usuarios from "./paginas/Usuarios";
-import Productos from "./paginas/Productos";
-import Categorias from "./paginas/Categorias";
 import LoginForm from "./paginas/LoginForm";
-import RutaProtegida from "./componentes/RutaProtegida";
-import MisDatos from "./paginas/MisDatos";
-import ProductosNuevo from "./paginas/ProductosNuevo";
+
+import AdminPanel from "./paginas/AdminPanel";
 import Cliente from "./paginas/Cliente";
-import "react-toastify/dist/ReactToastify.css";
+
+import Usuarios from "./paginas/Usuarios";
+import Categorias from "./paginas/Categorias";
+import ProductosNuevo from "./paginas/ProductosNuevo";
+import MisDatos from "./paginas/MisDatos";
 import PedidosAdmin from "./paginas/PedidosAdmin";
+import Admin from "./paginas/Admin";
+
+import RutaProtegida from "./componentes/RutaProtegida";
+import PrivateRoute from "./componentes/PrivateRoute";
+
+import "react-toastify/dist/ReactToastify.css";
+import "./styles/auth";
 
 function App() {
   return (
     <Router>
       <Routes>
 
+        {/* LOGIN */}
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/login-form" element={<LoginForm />} />
 
-        {/* ADMIN */}
+        {/* ADMIN PANEL */}
         <Route
           path="/admin"
           element={
@@ -33,6 +39,7 @@ function App() {
           }
         />
 
+        {/* USUARIOS */}
         <Route
           path="/usuarios"
           element={
@@ -42,12 +49,17 @@ function App() {
           }
         />
 
-        <Route path="/producto" element={
-  <RutaProtegida rolPermitido="admin">
-    <ProductosNuevo />
-  </RutaProtegida>
-}/>
+        {/* PRODUCTOS */}
+        <Route
+          path="/productos"
+          element={
+            <RutaProtegida rolPermitido="admin">
+              <ProductosNuevo />
+            </RutaProtegida>
+          }
+        />
 
+        {/* CATEGORIAS */}
         <Route
           path="/categorias"
           element={
@@ -57,24 +69,36 @@ function App() {
           }
         />
 
-        {/* CLIENTE */}
-       <Route
-  path="/cliente"
-  element={
-    <RutaProtegida rolPermitido="cliente">
-      <Cliente />
-    </RutaProtegida>
-  }
-/>
-<Route
-    path="/menucliente"
-    element={
-        <RutaProtegida rolPermitido="cliente">
-            <Cliente />
-        </RutaProtegida>
-    }
-/>
+        {/* PEDIDOS */}
+        <Route
+          path="/pedidos"
+          element={
+            <RutaProtegida rolPermitido="admin">
+              <PedidosAdmin />
+            </RutaProtegida>
+          }
+        />
 
+        {/* CLIENTE */}
+        <Route
+          path="/cliente"
+          element={
+            <RutaProtegida rolPermitido="cliente">
+              <Cliente />
+            </RutaProtegida>
+          }
+        />
+
+        <Route
+          path="/menucliente"
+          element={
+            <RutaProtegida rolPermitido="cliente">
+              <Cliente />
+            </RutaProtegida>
+          }
+        />
+
+        {/* MIS DATOS */}
         <Route
           path="/misdatos"
           element={
@@ -83,15 +107,17 @@ function App() {
             </RutaProtegida>
           }
         />
+
+        {/* ADMIN EXTRA */}
         <Route
-    path="/pedidos"
-    element={<PedidosAdmin />}
-/>
-         <Route path="/productos" element={
-  <RutaProtegida rolPermitido="admin">
-    <ProductosNuevo />
-  </RutaProtegida>
-}/>
+          path="/admin-dashboard"
+          element={
+            <PrivateRoute>
+              <Admin />
+            </PrivateRoute>
+          }
+        />
+
       </Routes>
     </Router>
   );

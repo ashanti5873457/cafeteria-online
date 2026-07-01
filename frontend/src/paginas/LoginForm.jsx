@@ -3,80 +3,99 @@ import API from "../api/api";
 import { useNavigate } from "react-router-dom";
 
 function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const navigate = useNavigate();
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+const navigate = useNavigate();
 
-  const login = async (e) => {
-    e?.preventDefault();
+const login = async (e) => {
+e.preventDefault();
 
-    try {
-      console.log("Datos enviados:", { email, password });
+console.log("EMAIL ENVIADO:", email);
+console.log("PASSWORD ENVIADO:", password);
 
-      const res = await API.post("login/", {
-        email,
-        password,
-      });
+try {
+  const res = await API.post("login/", {
+    username: email.split("@")[0],
+    password: password
+  });
 
-      console.log("Respuesta backend:", res.data);
+  console.log("RESPUESTA BACKEND:", res.data);
 
-      const user = res.data;
-      console.log(user);
+  localStorage.setItem("token", res.data.token);
 
-      if (!user) {
-        alert("No se recibió usuario del servidor");
-        return;
-      }
+  let rol = "cliente";
 
-      localStorage.setItem("usuario", JSON.stringify(user));
+  if (email.toLowerCase().includes("admin")) {
+    rol = "admin";
+  }
 
-      if (user.rol === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/cliente");
-      }
-
-    } catch (error) {
-      console.log("Error login:", error);
-
-      if (error.response) {
-        alert(
-          typeof error.response.data === "string"
-            ? error.response.data
-            : JSON.stringify(error.response.data)
-        );
-      } else {
-        alert(error.message);
-      }
-    }
+  const user = {
+    id_usuario: res.data.id_usuario || res.data.id || null,
+    username: res.data.username || email.split("@")[0],
+    email: email,
+    rol: rol
   };
 
-  return (
-    <div className="container d-flex justify-content-center mt-5">
-      <div className="card p-4 shadow" style={{ width: "400px" }}>
-        <h3 className="text-center">Iniciar Sesión</h3>
+  localStorage.setItem("usuario", JSON.stringify(user));
 
-        <input
-          className="form-control mb-2"
-          placeholder="Correo"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+  console.log("USUARIO GUARDADO:", user);
 
-        <input
-          className="form-control mb-3"
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+  if (user.rol === "admin") {
+    navigate("/admin");
+  } else {
+    navigate("/cliente");
+  }
 
-        <button className="btn btn-success w-100" onClick={login}>
-          Entrar
-        </button>
-      </div>
-    </div>
-  );
+} catch (error) {
+  console.log("ERROR LOGIN:", error);
+
+  if (error.response) {
+    console.log("STATUS:", error.response.status);
+    console.log("ERROR BACKEND:", error.response.data);
+
+    alert(
+      error.response.data?.non_field_errors?.[0] ||
+      error.response.data?.detail ||
+      "Credenciales incorrectas"
+    );
+  } else {
+    console.log("ERROR RED:", error.message);
+    alert("No se pudo conectar con el servidor");
+  }
+}
+
+};
+
+return ( <div className="container d-flex justify-content-center mt-5">
+<div className="card p-4 shadow" style={{ width: "400px" }}> <h3 className="text-center">Iniciar Sesión</h3>
+
+    <form onSubmit={login}>
+      <input
+        className="form-control mb-2"
+        type="email"
+        placeholder="Correo"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+
+      <input
+        className="form-control mb-3"
+        type="password"
+        placeholder="Contraseña"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+
+      <button className="btn btn-success w-100" type="submit">
+        Entrar
+      </button>
+    </form>
+  </div>
+</div>
+
+);
 }
 
 export default LoginForm;

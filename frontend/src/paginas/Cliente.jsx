@@ -5,7 +5,13 @@ import "./Cliente.css";
 
 function Cliente() {
   const navigate = useNavigate();
-  const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+
+  const usuario = {
+    id_usuario: 2,
+    nombre: "Sherlin",
+    email: "sherlin@gmail.com",
+    rol: "cliente"
+  };
 
   const [productos, setProductos] = useState([]);
   const [carrito, setCarrito] = useState([]);
@@ -17,33 +23,31 @@ function Cliente() {
   }, []);
 
   const cargarProductos = async () => {
-    const res = await API.get("productos/");
-    setProductos(res.data);
+    try {
+      const res = await API.get("productos/");
+      setProductos(res.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const productosFiltrados = productos.filter((p) =>
     p.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  // 🛒 AGREGAR AL CARRITO (CON STOCK)
+  // =========================
+  // AGREGAR AL CARRITO (SIN ALERTA)
+  // =========================
   const agregarAlCarrito = (prod) => {
     setCarrito((prev) => {
-      const existe = prev.find(
-        (p) => p.id_producto === prod.id_producto
-      );
+      const id = prod.id || prod.id_producto;
 
-      const cantidadActual = existe ? existe.cantidad : 0;
-
-      // 🚨 NO dejar pasar del stock
-      if (cantidadActual >= prod.stock) {
-        alert("⚠️ No hay más stock disponible");
-        return prev;
-      }
+      const existe = prev.find((p) => p.id === id);
 
       if (existe) {
         return prev.map((p) =>
-          p.id_producto === prod.id_producto
-            ? { ...p, cantidad: p.cantidad + 1 }
+          p.id === id
+            ? { ...p, cantidad: Math.min(p.cantidad + 1, p.stock) }
             : p
         );
       }
@@ -51,71 +55,71 @@ function Cliente() {
       return [
         ...prev,
         {
-          id_producto: prod.id_producto,
+          id,
           nombre: prod.nombre,
-          precio: prod.precio,
-          stock: prod.stock,
-          cantidad: 1,
-        },
+          precio: Number(prod.precio),
+          stock: Number(prod.stock),
+          cantidad: 1
+        }
       ];
     });
   };
 
-  // ➕ ➖ CANTIDAD (CON CONTROL DE STOCK)
+  // =========================
+  // CANTIDAD
+  // =========================
   const cambiarCantidad = (id, delta) => {
     setCarrito((prev) =>
       prev
         .map((p) => {
-          if (p.id_producto !== id) return p;
+          if (p.id !== id) return p;
 
-          const nuevaCantidad = p.cantidad + delta;
+          const nueva = p.cantidad + delta;
 
-          // ❌ no permitir menos de 1
-          if (nuevaCantidad < 1) return p;
+          if (nueva < 1) return p;
+          if (nueva > p.stock) return p;
 
-          // ❌ no permitir más que stock
-          if (nuevaCantidad > p.stock) {
-            alert("⚠️ No puedes superar el stock disponible");
-            return p;
-          }
-
-          return { ...p, cantidad: nuevaCantidad };
+          return { ...p, cantidad: nueva };
         })
         .filter((p) => p.cantidad > 0)
     );
   };
 
   const eliminarDelCarrito = (id) => {
-    setCarrito((prev) =>
-      prev.filter((p) => p.id_producto !== id)
-    );
+    setCarrito((prev) => prev.filter((p) => p.id !== id));
   };
 
   const total = carrito.reduce(
-    (sum, p) => sum + Number(p.precio) * p.cantidad,
+    (sum, p) => sum + p.precio * p.cantidad,
     0
   );
 
-  // 💳 COMPRA
+  // =========================
+  // PAGAR (FUNCIONA)
+  // =========================
   const pagar = async () => {
     try {
-      const items = carrito.map((p) => ({
-        producto_id: p.id_producto,
-        cantidad: p.cantidad,
-      }));
+      if (carrito.length === 0) return;
+
+      const confirmar = window.confirm("¿Confirmar pedido?");
+      if (!confirmar) return;
 
       await API.post("comprar/", {
         usuario_id: usuario.id_usuario,
-        items,
+        carrito: carrito.map((p) => ({
+          id: p.id,
+          cantidad: p.cantidad
+        }))
       });
-
-      alert("✅ Pedido realizado");
 
       setCarrito([]);
       cargarProductos();
+
+      alert("✅ Pedido realizado correctamente");
+
     } catch (error) {
-      console.log(error.response?.data || error);
-      alert(error.response?.data?.error || "❌ Error al comprar");
+      console.log(error);
+      alert("❌ Error al comprar");
     }
   };
 
@@ -127,69 +131,149 @@ function Cliente() {
         <h2>☕ Cafetería Online</h2>
 
         <div className="header-right">
-
           <input
             placeholder="Buscar productos..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
 
-          <button onClick={() => setVista("perfil")}>
-            👤 Mis Datos
-          </button>
-
-          <button onClick={() => setVista("productos")}>
-            🛍 Productos
-          </button>
-
-          <button onClick={() => navigate("/")}>
-            Salir
-          </button>
-
+          <button onClick={() => setVista("datos")}>👤 Mis Datos</button>
+          <button onClick={() => setVista("productos")}>🛒 Productos</button>
+          <button onClick={() => navigate("/")}>Salir</button>
         </div>
       </div>
 
-      {/* 👤 PERFIL */}
-      {vista === "perfil" && (
-        <div className="profile-container">
-          <div className="profile-card">
+      {/* ================= PRODUCTOS ================= */}
+      {vista === "productos" && (
+        <div className="productos-grid">
 
-            <div className="avatar">
-              {usuario?.nombre?.charAt(0)}
+          {productosFiltrados.map((p) => {
+            const agotado = Number(p.stock) <= 0;
+
+            return (
+              <div className="producto-card-cliente" key={p.id || p.id_producto}>
+
+                <img
+                  className="producto-img"
+                  src={p.imagen || "/placeholder.png"}
+                  alt={p.nombre}
+                />
+
+                <div className="producto-contenido">
+
+                  <div className="titulo-card">{p.nombre}</div>
+
+                  <div className="descripcion-card">{p.descripcion}</div>
+
+                  <div className="precio-card">
+                    ${Number(p.precio).toFixed(2)}
+                  </div>
+
+                  <div className="stock-card">
+                    {agotado ? (
+                      <span className="stock-agotado">AGOTADO</span>
+                    ) : (
+                      <span className="stock-badge">
+                        Stock: {p.stock}
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    className="btn-agregar"
+                    disabled={agotado}
+                    onClick={() => agregarAlCarrito(p)}
+                  >
+                    🛒 Agregar
+                  </button>
+
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ================= CARRITO ================= */}
+      {vista === "productos" && (
+        <div className="carrito">
+
+          <h3>🛒 Carrito</h3>
+
+          {carrito.length === 0 && <p>Vacío</p>}
+
+          {carrito.map((p) => (
+            <div key={p.id} className="carrito-item">
+
+              <span>{p.nombre}</span>
+
+              <div>
+                <button onClick={() => cambiarCantidad(p.id, -1)}>-</button>
+                <span>{p.cantidad}</span>
+                <button onClick={() => cambiarCantidad(p.id, 1)}>+</button>
+              </div>
+
+              <span>
+                ${(p.precio * p.cantidad).toFixed(2)}
+              </span>
+
+              <button onClick={() => eliminarDelCarrito(p.id)}>
+                ❌
+              </button>
+
+            </div>
+          ))}
+
+          <h3>Total: ${total.toFixed(2)}</h3>
+
+          <button className="btn-pagar" onClick={pagar}>
+            Confirmar pedido
+          </button>
+
+        </div>
+      )}
+
+      {/* ================= MODAL MIS DATOS ================= */}
+      {vista === "datos" && (
+        <div className="modal-overlay" onClick={() => setVista("productos")}>
+
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+
+            <div className="profile-header">
+              <div className="avatar">
+                {usuario?.nombre?.charAt(0)?.toUpperCase()}
+              </div>
+
+              <div>
+                <h2 className="profile-name">{usuario?.nombre}</h2>
+                <span className="profile-sub">👤 Perfil de usuario</span>
+              </div>
             </div>
 
-            <h2 className="profile-name">
-              {usuario?.nombre}
-            </h2>
-
-            <p className="profile-sub">
-              👤 Usuario registrado
-            </p>
+            <div className="role-badge">
+              🟢 {usuario?.rol}
+            </div>
 
             <div className="profile-info">
 
               <div className="info-row">
-                <span>📧 Email</span>
+                <span>ID</span>
+                <b>#{usuario?.id_usuario}</b>
+              </div>
+
+              <div className="info-row">
+                <span>Nombre</span>
+                <b>{usuario?.nombre}</b>
+              </div>
+
+              <div className="info-row">
+                <span>Email</span>
                 <b>{usuario?.email}</b>
               </div>
 
               <div className="info-row">
-                <span>🆔 ID</span>
-                <b>{usuario?.id_usuario}</b>
-              </div>
-
-              <div className="info-row">
-                <span>🧭 Rol</span>
-                <b className="badge rol">
-                  {usuario?.rol || "cliente"}
-                </b>
-              </div>
-
-              <div className="info-row">
-                <span>⚡ Estado</span>
-                <b className={`badge ${usuario?.activo ? "active" : "inactive"}`}>
-                  {usuario?.activo ? "Activo" : "Inactivo"}
-                </b>
+                <span>Estado</span>
+                <b className="status-ok">Activo</b>
               </div>
 
             </div>
@@ -198,94 +282,11 @@ function Cliente() {
               className="btn-back"
               onClick={() => setVista("productos")}
             >
-              🔙 Regresar
+              ✖ Cerrar
             </button>
 
           </div>
         </div>
-      )}
-
-      {/* 🛍 PRODUCTOS */}
-      {vista === "productos" && (
-        <>
-          <div className="productos-grid">
-
-            {productosFiltrados.map((p) => {
-              const enCarrito = carrito.find(c => c.id_producto === p.id_producto);
-              const cantidadEnCarrito = enCarrito ? enCarrito.cantidad : 0;
-              const sinStock = cantidadEnCarrito >= p.stock;
-
-              return (
-                <div className="card-producto" key={p.id_producto}>
-
-                  <img src={p.imagen || "/placeholder.png"} />
-
-                  <h3>{p.nombre}</h3>
-                  <p>{p.descripcion}</p>
-
-                  <b>${p.precio}</b>
-
-                  <p className={p.stock <= 0 ? "agotado" : "stock"}>
-                    Stock: {p.stock}
-                  </p>
-
-                  <button
-                    disabled={p.stock <= 0 || sinStock}
-                    onClick={() => agregarAlCarrito(p)}
-                  >
-                    Agregar
-                  </button>
-
-                </div>
-              );
-            })}
-
-          </div>
-
-          {/* 🛒 CARRITO */}
-          <div className="carrito">
-
-            <h3>🛒 Carrito</h3>
-
-            {carrito.length === 0 && <p>Vacío</p>}
-
-            {carrito.map((p) => (
-              <div key={p.id_producto} className="carrito-item">
-
-                <span>{p.nombre}</span>
-
-                <div>
-                  <button onClick={() => cambiarCantidad(p.id_producto, -1)}>
-                    -
-                  </button>
-
-                  <span>{p.cantidad}</span>
-
-                  <button
-                    onClick={() => cambiarCantidad(p.id_producto, 1)}
-                    disabled={p.cantidad >= p.stock}
-                  >
-                    +
-                  </button>
-                </div>
-
-                <span>${p.precio * p.cantidad}</span>
-
-                <button onClick={() => eliminarDelCarrito(p.id_producto)}>
-                  ❌
-                </button>
-
-              </div>
-            ))}
-
-            <h3>Total: ${total.toFixed(2)}</h3>
-
-            <button className="btn-pagar" onClick={pagar}>
-              Confirmar pedido
-            </button>
-
-          </div>
-        </>
       )}
 
     </div>

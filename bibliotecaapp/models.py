@@ -1,38 +1,7 @@
 ﻿from django.db import models
-
-# =========================
-# VISTA (SOLO LECTURA SQL)
-# =========================
-class VistaPedido(models.Model):
-    id_pedido = models.IntegerField(primary_key=True)
-    cliente = models.CharField(max_length=100)
-    email = models.EmailField()
-    fecha = models.DateTimeField()
-    total = models.DecimalField(max_digits=10, decimal_places=2)
-
-    class Meta:
-        managed = False  # 🔥 importante: Django NO toca esta tabla
-        db_table = "vista_pedidos"
+from django.contrib.auth.models import User
 
 
-# =========================
-# USUARIO
-# =========================
-class Usuario(models.Model):
-    id_usuario = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=100)
-    email = models.EmailField()
-    password = models.CharField(max_length=255)
-    activo = models.BooleanField(default=True)
-    rol = models.CharField(max_length=20, default="cliente")
-
-    class Meta:
-        db_table = "usuario"
-
-
-# =========================
-# CATEGORIA
-# =========================
 class Categoria(models.Model):
     id_categoria = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
@@ -41,21 +10,17 @@ class Categoria(models.Model):
         db_table = "categoria"
 
 
-# =========================
-# PRODUCTO
-# =========================
 class Producto(models.Model):
-    id_producto = models.AutoField(primary_key=True)
+    id = models.AutoField(db_column='id_producto', primary_key=True)
     nombre = models.CharField(max_length=100)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
-    stock = models.IntegerField()
-    imagen = models.TextField()
-    descripcion = models.TextField()
+    stock = models.IntegerField(default=0)
+    imagen = models.TextField(default="")
+    descripcion = models.TextField(default="")
 
     categoria = models.ForeignKey(
         Categoria,
         on_delete=models.CASCADE,
-        db_column="categoria_id",
         related_name="productos"
     )
 
@@ -63,45 +28,32 @@ class Producto(models.Model):
         db_table = "producto"
 
 
-# =========================
-# PEDIDO (REAL DEL SISTEMA)
-# =========================
+class Usuario(models.Model):
+    id_usuario = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=100)
+    email = models.EmailField()
+    password = models.CharField(max_length=100)
+    activo = models.BooleanField()
+    rol = models.CharField(max_length=20)
+
+    class Meta:
+        db_table = "usuario"
+
+
 class Pedido(models.Model):
     id_pedido = models.AutoField(primary_key=True)
-
-    usuario = models.ForeignKey(
-        Usuario,
-        on_delete=models.CASCADE,
-        db_column="usuario_id",
-        related_name="pedidos"
-    )
-
-    fecha = models.DateTimeField(auto_now_add=True)  # UTC interno (CORRECTO)
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    fecha = models.DateTimeField(auto_now_add=True)
     total = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
         db_table = "pedido"
 
 
-# =========================
-# DETALLE PEDIDO
-# =========================
 class DetallePedido(models.Model):
     id_detalle = models.AutoField(primary_key=True)
-
-    pedido = models.ForeignKey(
-        Pedido,
-        on_delete=models.CASCADE,
-        related_name="detalles",
-        db_column="pedido_id"
-    )
-
-    producto = models.ForeignKey(
-        Producto,
-        on_delete=models.CASCADE,
-        db_column="producto_id"
-    )
-
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
     cantidad = models.IntegerField()
     precio = models.DecimalField(max_digits=10, decimal_places=2)
 

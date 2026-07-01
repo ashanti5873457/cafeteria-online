@@ -1,0 +1,73 @@
+/* Fondo */
+body{
+    background: #f4f6f9;
+}
+
+/* Título */
+.titulo-categorias{
+    font-size: 30px;
+    font-weight: 800;
+    color: #1f2937;
+}
+
+/* Tarjeta principal */
+.categoria-card{
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,.08);
+}
+
+/* Botón agregar */
+.btn-add-categoria{
+    background: linear-gradient(135deg,#00c853,#00b0ff);
+    color:white;
+    border:none;
+    padding:12px 18px;
+    border-radius:12px;
+    font-weight:700;
+    transition:.3s;
+}
+
+.btn-add-categoria:hover{
+    transform:translateY(-3px);
+}
+
+/* Tabla */
+.table{
+    border-radius:15px;
+    overflow:hidden;
+}
+
+/* ===== CATEGORIAS ===== */
+
+.titulo-categorias{
+    font-size: 30px;
+    font-weight: 800;
+    color: #1f2937;
+}
+
+.categoria-card{
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    transition: all .3s ease;
+}
+
+.categoria-card:hover{
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+}
+
+.card-header-custom{
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    color: white;
+    font-weight: 700;
+    padding: 15px;
+    font-size: 18px;
+}
+
+.table tbody tr:hover{
+    background: #f8fafc;
+}

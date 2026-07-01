@@ -1,144 +1,191 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
 import NavbarAdmin from "../componentes/NavbarAdmin";
+import "./usuarios.css";
 
 function Usuarios() {
+  const [usuarios, setUsuarios] = useState([]);
 
-    const [usuarios, setUsuarios] = useState([]);
+  const cargarUsuarios = async () => {
+    try {
+      const res = await API.get("usuarios/");
+      setUsuarios(res.data);
+    } catch (error) {
+      console.log("Error al cargar usuarios:", error);
+    }
+  };
 
-    // 🔥 CARGAR USUARIOS
-    const cargarUsuarios = async () => {
-        try {
-            const res = await API.get("usuarios/");
-            setUsuarios(res.data);
-        } catch (error) {
-            console.log("Error al cargar usuarios:", error);
-        }
-    };
+  useEffect(() => {
+    cargarUsuarios();
+  }, []);
 
-    useEffect(() => {
-        cargarUsuarios();
-    }, []);
+  return (
+    <div>
+      <NavbarAdmin />
 
-    return (
-        <div>
-            <NavbarAdmin />
+      <div className="container mt-4">
 
-            <div className="container-fluid mt-3">
+        {/* HEADER MODERNO */}
+        <div className="admin-header d-flex justify-content-between align-items-center">
 
-                {/* HEADER */}
-                <div className="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h2 className="titulo-productos">
+              👤 Gestión de Usuarios
+            </h2>
 
-                    <h2 className="fw-bold">👤 Gestión de Usuarios</h2>
+            <p className="text-muted mb-0">
+              Administración de clientes registrados
+            </p>
+          </div>
 
-                    <button
-                        className="btn btn-secondary"
-                        onClick={cargarUsuarios}
-                    >
-                        🔄 Recargar
-                    </button>
+          <div className="d-flex gap-2">
 
-                </div>
+            <button
+              className="btn-back"
+              onClick={() => window.history.back()}
+            >
+              ⬅ Regresar
+            </button>
 
-                <div className="row">
+            <button
+              className="btn-add"
+              onClick={cargarUsuarios}
+            >
+              🔄 Recargar
+            </button>
 
-                    {/* TABLA */}
-                    <div className="col-md-9">
+          </div>
 
-                        <div className="card shadow-sm">
+        </div>
 
-                            <div className="card-header bg-dark text-white">
-                                Lista de Usuarios
-                            </div>
+        <div className="row mt-4">
 
-                            <div className="card-body p-0">
+          {/* TABLA */}
+          <div className="col-lg-9">
 
-                                <table className="table table-hover align-middle mb-0">
+            <div className="card product-card shadow border-0">
 
-                                    <thead className="table-dark">
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Nombre</th>
-                                            <th>Email</th>
-                                            <th>Estado</th>
-                                        </tr>
-                                    </thead>
+              <div className="card-header bg-dark text-white fw-bold">
+                👥 Lista de Usuarios
+              </div>
 
-                                    <tbody>
+              <div className="table-responsive">
 
-                                        {usuarios.length > 0 ? (
-                                            usuarios.map((u) => (
-                                                <tr key={u.id_usuario}>
+                <table className="table table-hover align-middle mb-0">
 
-                                                    <td>{u.id_usuario}</td>
+                  <thead className="table-dark">
+                    <tr>
+                      <th>ID</th>
+                      <th>Nombre</th>
+                      <th>Email</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
 
-                                                    <td className="fw-semibold">
-                                                        {u.nombre}
-                                                    </td>
+                  <tbody>
 
-                                                    <td>
-                                                        {u.email}
-                                                    </td>
+                    {usuarios.length > 0 ? (
+                      usuarios.map((u) => (
+                        <tr key={u.id_usuario}>
 
-                                                    <td>
-                                                        <span className={`badge ${u.activo === 1 ? "bg-success" : "bg-danger"}`}>
-                                                            {u.activo === 1 ? "Activo" : "Inactivo"}
-                                                        </span>
-                                                    </td>
+                          <td>
+                            <span className="fw-bold">
+                              #{u.id_usuario}
+                            </span>
+                          </td>
 
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="4" className="text-center p-3">
-                                                    No hay usuarios registrados
-                                                </td>
-                                            </tr>
-                                        )}
+                          <td className="fw-semibold">
+                            👤 {u.nombre}
+                          </td>
 
-                                    </tbody>
+                          <td>
+                            📧 {u.email}
+                          </td>
 
-                                </table>
+                          <td>
+                            <span
+                              className={`badge ${
+                                u.activo === 1
+                                  ? "bg-success"
+                                  : "bg-danger"
+                              }`}
+                            >
+                              {u.activo === 1
+                                ? "Activo"
+                                : "Inactivo"}
+                            </span>
+                          </td>
 
-                            </div>
-                        </div>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="4"
+                          className="text-center p-4"
+                        >
+                          No hay usuarios registrados
+                        </td>
+                      </tr>
+                    )}
 
-                    </div>
+                  </tbody>
 
-                    {/* PANEL LATERAL */}
-                    <div className="col-md-3">
+                </table>
 
-                        <div className="card shadow-sm">
-
-                            <div className="card-header bg-primary text-white">
-                                Panel Admin
-                            </div>
-
-                            <div className="card-body">
-
-                                <div className="alert alert-info p-2">
-                                    Total usuarios: {usuarios.length}
-                                </div>
-
-                                <div className="alert alert-warning p-2">
-                                    Activos: {usuarios.filter(u => u.activo === 1).length}
-                                </div>
-
-                                <div className="alert alert-danger p-2">
-                                    Inactivos: {usuarios.filter(u => u.activo !== 1).length}
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
+              </div>
 
             </div>
+
+          </div>
+
+          {/* PANEL ESTADÍSTICAS */}
+          <div className="col-lg-3">
+
+            <div className="card product-card shadow border-0">
+
+              <div className="card-header bg-primary text-white fw-bold">
+                📊 Estadísticas
+              </div>
+
+              <div className="card-body">
+
+                <div className="alert alert-info">
+                  👥 Total usuarios:
+                  <strong> {usuarios.length}</strong>
+                </div>
+
+                <div className="alert alert-success">
+                  ✅ Activos:
+                  <strong>
+                    {" "}
+                    {usuarios.filter(
+                      (u) => u.activo === 1
+                    ).length}
+                  </strong>
+                </div>
+
+                <div className="alert alert-danger">
+                  ❌ Inactivos:
+                  <strong>
+                    {" "}
+                    {usuarios.filter(
+                      (u) => u.activo !== 1
+                    ).length}
+                  </strong>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
         </div>
-    );
+
+      </div>
+    </div>
+  );
 }
 
 export default Usuarios;

@@ -12,10 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-5sm8%$m$kp*3$ygez5q(lrig5jo^o$v#pnbw$bs@te!=b5m(_n'
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-]
+ALLOWED_HOSTS = ["cafeteria-online.onrender.com"]
 
 # =========================
 # APPS
@@ -29,7 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'bibliotecaapp.apps.BibliotecaappConfig',
+    'rest_framework.authtoken',
+    'bibliotecaapp',
 ]
 
 # =========================
@@ -51,7 +49,7 @@ ROOT_URLCONF = 'Backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -68,27 +66,16 @@ WSGI_APPLICATION = 'Backend.wsgi.application'
 # =========================
 # BASE DE DATOS
 # =========================
-import os
-
-if os.environ.get("MYSQLHOST"):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('MYSQLDATABASE'),
-            'USER': os.environ.get('MYSQLUSER'),
-            'PASSWORD': os.environ.get('MYSQLPASSWORD'),
-            'HOST': os.environ.get('MYSQLHOST'),
-            'PORT': os.environ.get('MYSQLPORT'),
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'railway',
+        'USER': 'root',
+        'PASSWORD': 'GtUDOsMlvRuJPYOsoNPfmXUQoBqHYljy',
+        'HOST': 'shortline.proxy.rlwy.net',
+        'PORT': '27701',
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
+}
 # =========================
 # VALIDACIÓN PASSWORD
 # =========================
@@ -98,6 +85,18 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
+}
 
 # =========================
 # INTERNACIONALIZACIÓN (CORRECTO)
@@ -111,7 +110,8 @@ USE_TZ = False
 # =========================
 # STATIC
 # =========================
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # =========================
 # CORS

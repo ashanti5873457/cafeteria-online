@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
-import Footer from "../componentes/Footer";
 
 function MenuPublico() {
     const [productos, setProductos] = useState([]);

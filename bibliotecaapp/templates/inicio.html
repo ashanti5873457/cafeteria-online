@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tienda Online</title>
+</head>
+<body>
+
+    <h1>Tienda Online</h1>
+
+    {% for producto in productos %}
+        <div>
+            <h3>{{ producto.nombre }}</h3>
+            <p>{{ producto.descripcion }}</p>
+            <p>Precio: ${{ producto.precio }}</p>
+            <hr>
+        </div>
+    {% endfor %}
+
+</body>
+</html>

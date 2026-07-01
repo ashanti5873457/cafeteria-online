@@ -1,0 +1,92 @@
+/* ===== ADMIN LAYOUT ===== */
+.admin-container {
+    padding: 30px;
+    background: #f4f6f9;
+    min-height: 100vh;
+}
+
+/* ===== HEADER ===== */
+.admin-header {
+    margin-bottom: 25px;
+}
+
+.admin-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1f2937;
+}
+
+.admin-subtitle {
+    color: #6b7280;
+    margin-top: 5px;
+}
+
+/* ===== GRID ===== */
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+/* ===== CARDS ===== */
+.admin-card {
+    background: white;
+    padding: 20px;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    transition: 0.3s;
+    cursor: pointer;
+    text-align: center;
+}
+
+.admin-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.12);
+}
+
+/* ===== SECCIONES (TABLAS) ===== */
+.admin-section {
+    background: white;
+    padding: 20px;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    margin-top: 20px;
+}
+
+/* ===== BOTÓN PRINCIPAL ===== */
+.btn-admin {
+    background: linear-gradient(135deg, #00c853, #00b0ff);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    transition: 0.3s;
+}
+
+.btn-admin:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0, 200, 83, 0.25);
+}
+
+/* ===== BOTONES ACCIONES ===== */
+.btn-edit {
+    background: #ffb300;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+.btn-delete {
+    background: #ff1744;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+.btn-edit:hover,
+.btn-delete:hover {
+    transform: scale(1.05);
+}

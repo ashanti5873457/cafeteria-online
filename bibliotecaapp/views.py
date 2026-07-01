@@ -1,250 +1,195 @@
+from rest_framework import viewsets
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.db import transaction
-from django.utils.timezone import localtime
+
+import json
+
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
 
 from .models import (
     Usuario,
     Producto,
-    Categoria,
     Pedido,
-    DetallePedido
+    DetallePedido,
+    Categoria
+)
+
+from .serializers import (
+    UsuarioSerializer,
+    CategoriaSerializer,
+    ProductoSerializer,
+    LoginSerializer,
+    PedidoSerializer
 )
 
 # =========================
-# PRODUCTOS
+# PEDIDOS VIEWSET
 # =========================
-@api_view(['GET', 'POST', 'DELETE'])
-def productos(request):
-
-    try:
-
-        # LISTAR
-        if request.method == 'GET':
-            data = []
-
-            for p in Producto.objects.all():
-                data.append({
-                    "id_producto": p.id_producto,
-                    "nombre": p.nombre,
-                    "precio": float(p.precio),
-                    "stock": p.stock,
-                    "imagen": p.imagen,
-                    "descripcion": p.descripcion,
-                    "categoria": p.categoria.nombre
-                })
-
-            return Response(data)
-
-        # CREAR PRODUCTO
-        elif request.method == 'POST':
-
-            categoria_id = request.data.get("categoria_id")
-            categoria = Categoria.objects.get(id_categoria=categoria_id)
-
-            producto = Producto.objects.create(
-                nombre=request.data.get("nombre"),
-                precio=request.data.get("precio"),
-                stock=request.data.get("stock"),
-                imagen=request.data.get("imagen"),
-                descripcion=request.data.get("descripcion"),
-                categoria=categoria
-            )
-
-            return Response({
-                "mensaje": "Producto creado",
-                "id_producto": producto.id_producto
-            })
-
-        # ELIMINAR
-        elif request.method == 'DELETE':
-
-            id_producto = request.query_params.get("id")
-
-            producto = Producto.objects.filter(id_producto=id_producto).first()
-
-            if not producto:
-                return Response({"error": "No encontrado"}, status=404)
-
-            producto.delete()
-
-            return Response({"mensaje": "Eliminado"})
-
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
+class PedidoViewSet(viewsets.ModelViewSet):
+    queryset = Pedido.objects.all()
+    serializer_class = PedidoSerializer
 
 
 # =========================
-# ACTUALIZAR PRODUCTO
+# LOGIN (JWT / TOKEN)
 # =========================
-@api_view(['PUT'])
-def actualizar_producto(request):
+@api_view(['POST'])
+def login(request):
+    email = request.data.get("email")
+    password = request.data.get("password")
 
-    Producto.objects.filter(
-        id_producto=request.data.get("id_producto")
-    ).update(
-        nombre=request.data.get("nombre"),
-        precio=request.data.get("precio"),
-        stock=request.data.get("stock"),
-        imagen=request.data.get("imagen"),
-        descripcion=request.data.get("descripcion"),
-        categoria_id=request.data.get("categoria_id")
-    )
+    user = authenticate(username=email, password=password)
 
-    return Response({"mensaje": "Producto actualizado"})
+    if user is None:
+        return Response({"error": "Credenciales incorrectas"}, status=400)
 
-
-# =========================
-# LOGIN
-# =========================
-@api_view(["POST"])
-def login_user(request):
-
-    user = Usuario.objects.filter(
-        email=request.data.get("email"),
-        password=request.data.get("password")
-    ).first()
-
-    if not user:
-        return Response({"error": "Credenciales inválidas"}, status=400)
+    token, _ = Token.objects.get_or_create(user=user)
 
     return Response({
-        "id_usuario": user.id_usuario,
-        "nombre": user.nombre,
-        "email": user.email,
-        "rol": user.rol
+        "token": token.key,
+        "username": user.username,
+        "email": user.email
+    })
+
+
+@api_view(['POST'])
+def login_view(request):
+    serializer = LoginSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    user = serializer.validated_data["user"]
+    token, _ = Token.objects.get_or_create(user=user)
+
+    return Response({
+        "token": token.key,
+        "username": user.username,
+        "email": user.email
     })
 
 
 # =========================
-# USUARIOS
+# LOGIN SIMPLE (tabla Usuario)
 # =========================
-@api_view(['GET'])
-def usuarios(request):
+@csrf_exempt
+def login_user(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
 
-    return Response([
-        {
-            "id_usuario": u.id_usuario,
-            "nombre": u.nombre,
-            "email": u.email,
-            "activo": u.activo,
-            "rol": u.rol
-        }
-        for u in Usuario.objects.all()
-    ])
+    try:
+        data = json.loads(request.body)
 
+        email = data.get("email", "").strip()
+        password = data.get("password", "").strip()
 
-# =========================
-# CATEGORIAS
-# =========================
-@api_view(['GET'])
-def categorias(request):
+        user = Usuario.objects.filter(
+            email=email,
+            password=password,
+            activo=True
+        ).first()
 
-    data = []
+        if not user:
+            return JsonResponse({"error": "Credenciales inválidas"}, status=400)
 
-    for c in Categoria.objects.all():
-
-        productos = []
-
-        for p in c.productos.all():
-
-            productos.append({
-                "id_producto": p.id_producto,
-                "nombre": p.nombre,
-                "precio": float(p.precio),
-                "stock": p.stock
-            })
-
-        data.append({
-            "id_categoria": c.id_categoria,
-            "nombre": c.nombre,
-            "total_productos": len(productos),
-            "productos": productos
+        return JsonResponse({
+            "id_usuario": user.id_usuario,
+            "nombre": user.nombre,
+            "email": user.email,
+            "rol": user.rol
         })
 
-    return Response(data)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 # =========================
-# PEDIDOS (FIX FINAL HORA MÉXICO)
+# PRODUCTOS
 # =========================
-@api_view(["GET"])
-def pedidos(request):
+def productos(request):
+    data = list(Producto.objects.values(
+        "id",
+        "nombre",
+        "precio",
+        "stock",
+        "imagen",
+        "descripcion",
+        "categoria_id"
+    ))
+    return JsonResponse(data, safe=False)
 
-    data = []
-
-    for pedido in Pedido.objects.all().order_by("-fecha"):
-
-        fecha_mx = localtime(pedido.fecha)  # 🔥 CONVERSIÓN REAL
-
-        productos = []
-
-        for detalle in pedido.detalles.all():
-            productos.append({
-                "producto": detalle.producto.nombre,
-                "cantidad": detalle.cantidad,
-                "precio": float(detalle.precio)
-            })
-
-        data.append({
-            "id_pedido": pedido.id_pedido,
-            "cliente": pedido.usuario.nombre,
-            "email": pedido.usuario.email,
-
-            "fecha": fecha_mx.strftime("%d/%m/%Y %H:%M:%S"),  # 🔥 MÉXICO
-
-            "total": float(pedido.total),
-            "productos": productos
-        })
-
-    return Response(data)
 
 # =========================
-# COMPRAR (STOCK REAL)
+# COMPRA (CORREGIDO)
 # =========================
 @api_view(["POST"])
 def comprar(request):
-
     try:
-        usuario = Usuario.objects.get(id_usuario=request.data.get("usuario_id"))
-        items = request.data.get("items", [])
+        usuario_id = request.data.get("usuario_id")
+        carrito = request.data.get("carrito")
 
-        with transaction.atomic():
+        if not usuario_id:
+            return Response({"error": "Falta usuario_id"}, status=400)
 
-            pedido = Pedido.objects.create(usuario=usuario, total=0)
+        usuario = Usuario.objects.get(id_usuario=usuario_id)
 
-            total = 0
+        if not carrito:
+            return Response({"error": "Carrito vacío"}, status=400)
 
-            for item in items:
+        total = 0
 
-                producto = Producto.objects.get(
-                    id_producto=item["producto_id"]
+        pedido = Pedido.objects.create(usuario=usuario, total=0)
+
+        for item in carrito:
+            producto = Producto.objects.get(id=item["id"])
+            cantidad = item.get("cantidad", 1)
+
+            # 🔥 DESCONTAR STOCK
+            if producto.stock < cantidad:
+                return Response(
+                    {"error": f"No hay suficiente stock de {producto.nombre}"},
+                    status=400
                 )
 
-                cantidad = item.get("cantidad", 1)
+            producto.stock -= cantidad
+            producto.save()
 
-                if producto.stock < cantidad:
-                    return Response(
-                        {"error": f"Sin stock de {producto.nombre}"},
-                        status=400
-                    )
+            # 🔥 DETALLE PEDIDO
+            DetallePedido.objects.create(
+                pedido=pedido,
+                producto=producto,
+                cantidad=cantidad,
+                precio=producto.precio
+            )
 
-                producto.stock -= cantidad
-                producto.save()
+            total += float(producto.precio) * cantidad
 
-                DetallePedido.objects.create(
-                    pedido=pedido,
-                    producto=producto,
-                    cantidad=cantidad,
-                    precio=producto.precio
-                )
+        pedido.total = total
+        pedido.save()
 
-                total += float(producto.precio) * cantidad
-
-            pedido.total = total
-            pedido.save()
-
-        return Response({"mensaje": "Pedido creado correctamente"})
+        return Response({
+            "ok": True,
+            "pedido_id": pedido.id_pedido
+        })
 
     except Exception as e:
-        return Response({"error": str(e)}, status=500)
+        return Response({"error": str(e)}, status=400)
+
+
+# =========================
+# VIEWSETS
+# =========================
+class CategoriaViewSet(viewsets.ModelViewSet):
+    queryset = Categoria.objects.all()
+    serializer_class = CategoriaSerializer
+
+
+class ProductoViewSet(viewsets.ModelViewSet):
+    queryset = Producto.objects.all()
+    serializer_class = ProductoSerializer
+
+
+class UsuarioViewSet(viewsets.ModelViewSet):
+    queryset = Usuario.objects.all()
+    serializer_class = UsuarioSerializer
